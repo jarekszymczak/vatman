@@ -2,7 +2,7 @@ import os
 
 import scrapy
 
-from scraper.config import ALLEGRO_ITEMS_DIRECTORY, ALLEGRO_USERS_DIRECTORY, CATEGORIES_URL
+from commons.config import ALLEGRO_ITEMS_DIRECTORY, ALLEGRO_USERS_DIRECTORY, CATEGORIES_URL
 
 
 class AllegroListingSpider(scrapy.Spider):

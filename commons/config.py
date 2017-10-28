@@ -4,6 +4,9 @@ ROOT_DIRECTORY = os.getenv('ROOT_DIRECTORY') or '/Users/Shared/vatman'
 ALLEGRO_ITEMS_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'items')
 ALLEGRO_USERS_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'users')
 
+ALLEGRO_ITEMS_JSON = os.path.join(ROOT_DIRECTORY, 'items.json')
+ALLEGRO_USERS_JSON = os.path.join(ROOT_DIRECTORY, 'users.json')
+
 os.makedirs(ALLEGRO_ITEMS_DIRECTORY, exist_ok=True)
 os.makedirs(ALLEGRO_USERS_DIRECTORY, exist_ok=True)
 
