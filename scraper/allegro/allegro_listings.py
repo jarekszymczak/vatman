@@ -27,7 +27,7 @@ class AllegroListingSpider(scrapy.Spider):
 
     @staticmethod
     def item_output_path(url):
-        return os.path.join(ALLEGRO_ITEMS_DIRECTORY, url.split("/")[-1])
+        return os.path.join(ALLEGRO_ITEMS_DIRECTORY, url.split("/")[-1].split('?')[0])
 
     @staticmethod
     def user_output_path(url):
