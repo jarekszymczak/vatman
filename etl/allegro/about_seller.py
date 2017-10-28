@@ -103,6 +103,3 @@ def extract_data_from(id):
         "email": email,
         "other_candidate_numbers": other_candidate_numbers,
     }
-
-
-print(extract_data_from(321))
