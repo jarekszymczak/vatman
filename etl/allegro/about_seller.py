@@ -20,7 +20,7 @@ def get_nip(contact_data_field):
     if not nip_candidates:
         return None
     if len(nip_candidates) == 1:
-        return nip_candidates[0]
+        return list(nip_candidates)[0]
     for idx, word in enumerate(words):
         if idx > 0 and word in nip_candidates and "nip" == words[idx-1].lower():
             return word
