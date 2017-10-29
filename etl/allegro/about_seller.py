@@ -1,84 +1,87 @@
+import glob
+import pathlib
+import re
+from commons.utils import (remove_empty_lines, cleanup_and_join_numbers_in_text, extract_numbers_from_text)
+import pandas as pd
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 contact_data_selector = "#sellerUserData > div > div.col-ss-12.col-sm-9.col-md-10 > div"
-phone_number_selector = "#sellerInfoContactInfo > div > div.seller-info-data.col-ss-6.col-sm-4.col-md-5 > " \
-                        "section:nth-of-type(1) > div.seller-contact-data.col-xm-10"
-email_selector = "#sellerInfoContactInfo > div > div.seller-info-data.col-ss-6.col-sm-4.col-md-5 > " \
-                 "section:nth-of-type(2) > div.seller-contact-data.col-xm-10"
+phone_number_selector = "#sellerInfoContactInfo > div > div.seller-info-data.col-ss-6.col-sm-4.col-md-5"
+email_selector = "#sellerInfoContactInfo > div > div.seller-info-data.col-ss-6.col-sm-4.col-md-5"
 username_selector = "div.main-title-breadcrumbs.clearfix > div > h1 > span > span.uname"
 all_fields_id = "showItemSellerInfo"
 
-
-def remove_empty_lines(text):
-    if not text:
-        return None
-    return '\n'.join([line for line in text.split("\n") if line])
-
-
-def cleanup_contact_data_field(contact_data):
-    if not contact_data or not contact_data.text:
-        return None
-    return remove_empty_lines(contact_data.text)
-
-
-def remove_non_numeric_data_from_line(line):
-    if not line:
-        return None
-    return ''.join([''.join(ch for ch in word if ch.isdigit()) for word in line.split()])
-
-
 def get_nip(contact_data_field):
-    nip = None
-    contact_data = cleanup_contact_data_field(contact_data_field)
-    if contact_data:
-        for line in contact_data.split("\n"):
-            if "nip" in line.lower():
-                nip = remove_non_numeric_data_from_line(line)
-                if len(nip) == 10:
-                    return nip.strip()
-    # look for it among other numbers on page
-    return nip.strip() if nip else None
+    if not contact_data_field or not contact_data_field.text:
+        return None
+    words = cleanup_and_join_numbers_in_text(contact_data_field.text)
+    nip_candidates = {x for x in words if re.findall(r'^[0-9]+$', x)}
+    if not nip_candidates:
+        return None
+    if len(nip_candidates) == 1:
+        return nip_candidates[0]
+    for idx, word in enumerate(words):
+        if idx > 0 and word in nip_candidates and "nip" == words[idx-1].lower():
+            return word
+    return None
 
+def get_phone_numbers(phone_number_field):
+    if not phone_number_field:
+        return
+    phone_numbers = set()
+    for number in remove_empty_lines(phone_number_field.text):
+        if number and len(number) >= 9 and len(number) <= 11:
+            phone_numbers.update(extract_numbers_from_text(number))
+    return phone_numbers
 
-def get_phone_number(phone_number_field):
-    phone_number = remove_non_numeric_data_from_line(phone_number_field.text)
-    if phone_number and len(phone_number) >= 9 and len(phone_number) <= 11:
-        return phone_number.strip()
-    # look for it among other numbers on page
-    return phone_number.strip() if phone_number else None
-
+def get_emails(email_field):
+    if not email_field:
+        return None
+    emails = set()
+    for word in email_field.text.split():
+        if "@" in word:
+            while not word[-1].isalnum():
+                word = word[:-1]
+            emails.add(word.strip())
+    return emails
 
 def get_username(username_field):
+    if not username_field:
+        return None
     return username_field.text.strip()
 
+def get_other_candidate_numbers(all_fields):
+    if not all_fields or not all_fields.text:
+        return set(), None
+    words = cleanup_and_join_numbers_in_text(all_fields.text)
+    nums = {x for x in words if re.findall(r'^[0-9]+$', x)}
+    if not nums:
+        return set(), None
+    nip_candidates = [num for num in nums if len(num) == 10]
+    potential_nip = None
+    if not nip_candidates:
+        potential_nip = None
+    if len(nip_candidates) == 1:
+        potential_nip = nip_candidates[0].strip()
+    for idx, word in enumerate(words):
+        if idx > 0 and word in nip_candidates and "nip" == words[idx-1].lower():
+            potential_nip = word.strip()
+    return ({num.strip() for num in nums if num and (len(num) == 9 or len(num) == 11)}, potential_nip)
 
-def get_email(email_field):
-    return email_field.text.strip()
+def get_other_candidate_emails(all_fields):
+    if not all_fields or not all_fields.text:
+        return None
+    emails = set()
+    for word in all_fields.text.split():
+        if "@" in word:
+            while word and not word[-1].isalnum():
+                word = word[:-1]
+            emails.add(word.strip())
+    return emails
 
-
-def find_all_numbers(all_fields):
-    potential_numbers = set()
-    for all_info_element in all_fields.find_all("div"):
-        words = all_info_element.text.split()
-        digits = ''.join([''.join(ch for ch in word if ch.isdigit()) for word in words]).strip()
-        if digits:
-            potential_numbers.add(digits)
-    return potential_numbers
-
-
-def get_other_candidate_numbers(all_fields, remove_list=None):
-    other_candidate_numbers = set()
-    for number in find_all_numbers(all_fields):
-        candidate_number = number
-        for to_remove in remove_list:
-            candidate_number = candidate_number.replace(to_remove, "").strip() if to_remove else None
-        if candidate_number and len(candidate_number) >= 9 and len(candidate_number) <= 11:
-            other_candidate_numbers.add(candidate_number)
-    return other_candidate_numbers
-
-
-def extract_data_from(id):
-    with open(f'{str(id)}.html', 'r') as myfile:
+def extract_data_from(file_path):
+    with open(file_path, 'r') as myfile:
         data = myfile.read()
 
     soup = BeautifulSoup(data, 'html.parser')
@@ -90,16 +93,26 @@ def extract_data_from(id):
     all_fields = soup.find(id=all_fields_id)
 
     nip = get_nip(contact_data_field)
-    phone_number = get_phone_number(phone_number_field)
+    phone_numbers = get_phone_numbers(phone_number_field)
     username = get_username(username_field)
-    email = get_email(email_field)
-    other_candidate_numbers = get_other_candidate_numbers(all_fields, [phone_number, nip])
+    emails = get_emails(email_field)
+    (other_candidate_phone_numbers, alternative_nip) = get_other_candidate_numbers(all_fields)
+    other_candidate_emails = get_other_candidate_emails(all_fields)
+
+    user_id = file_path.split('/')[-1]
 
     return {
-        "id": id,
-        "nip": nip,
-        "phone_number": phone_number,
+        "user_id":user_id,
+        "nip": nip or alternative_nip,
+        "phone_numbers": phone_numbers,
         "username": username,
-        "email": email,
-        "other_candidate_numbers": other_candidate_numbers,
+        "emails": emails,
+        "more_phones": other_candidate_phone_numbers,
+        "more_emails": other_candidate_emails,
     }
+
+
+pattern = str(pathlib.Path(__file__).absolute().parent.parent.parent / 'examples' / 'vatman' / 'users' / '*')
+parsed_users = [extract_data_from(file_path) for file_path in tqdm(glob.glob(pattern))]
+df = pd.io.json.json_normalize(parsed_users)
+a = df
