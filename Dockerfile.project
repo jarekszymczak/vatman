@@ -16,9 +16,16 @@ ENV PATH /opt/conda/bin:$PATH
 RUN conda install scrapy
 RUN conda install tqdm
 
+RUN apt-get install -y supervisor
+
 RUN mkdir /home/vatman
 COPY commons /home/vatman/commons
 COPY etl /home/vatman/etl
 COPY scraper /home/vatman/scraper
+COPY supervisord.conf /home/vatman/supervisord.conf
+COPY supervisord.sh /home/vatman/supervisord.sh
+RUN chmod ugo+x /home/vatman/supervisord.sh
 
 WORKDIR /home/vatman
+#CMD ["/home/vatman/supervisord.sh"]
+CMD ["/usr/bin/supervisord", "-c", "/home/vatman/supervisord.conf"]

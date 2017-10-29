@@ -10,6 +10,9 @@ services:
       dockerfile: Dockerfile.project
     links:
       - mongodb
+    volumes:
+    # user needs to map this
+     - /Users/Shared/vatman/:/Users/Shared/vatman/
   mongodb:
     build:
       context: .
@@ -20,4 +23,5 @@ services:
     ports:
      - 27017:27017
     volumes:
+    # and this
      - /Users/Shared/vatman/data/mongodb/:/data/db
