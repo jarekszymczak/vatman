@@ -1,6 +1,6 @@
 from scrapy.crawler import CrawlerProcess
 
-from scraper.allegro.allegro_listings import AllegroListingSpider
+from scraper.allegro.allegro_scraper import AllegroListingSpider
 
 if __name__ == '__main__':
     process = CrawlerProcess({

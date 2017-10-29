@@ -1,0 +1,23 @@
+version: '2'
+
+services:
+  vatman:
+    container_name: vatman
+    image: vatman
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.project
+    links:
+      - mongodb
+  mongodb:
+    build:
+      context: .
+      dockerfile: Dockerfile.mongodb
+    container_name: mongodb_database
+    image: mongodb
+    restart: always
+    ports:
+     - 27017:27017
+    volumes:
+     - /Users/Shared/vatman/data/mongodb/:/data/db
