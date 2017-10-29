@@ -19,7 +19,6 @@ CATEGORIES_URL = [
     "https://allegro.pl/kategoria/komputery?order=n",
     "https://allegro.pl/kategoria/tablety-89253?order=n",
     # additional categories
-    "https://allegro.pl/kategoria/komputery?order=t&price_from=500",
     "https://allegro.pl/kategoria/konsole-i-automaty?order=t&price_from=400",
     "https://allegro.pl/kategoria/komputery?order=t&price_from=500",
     "https://allegro.pl/kategoria/dyski-i-pamieci-przenosne-4475?price_from=300&order=t",
@@ -27,5 +26,6 @@ CATEGORIES_URL = [
     "https://allegro.pl/kategoria/komputery-stacjonarne-486?price_from=500&order=t",
     "https://allegro.pl/kategoria/obraz-i-grafika-4312?price_from=500&order=t",
     "https://allegro.pl/kategoria/podzespoly-bazowe-4226?price_from=500&order=t",
-    "https://allegro.pl/kategoria/fotografia?order=t&price_from=500"
+    "https://allegro.pl/kategoria/fotografia?order=t&price_from=500",
+    "https://allegro.pl/kategoria/akcesoria-gsm-348?order=t&price_from=400"
 ]
