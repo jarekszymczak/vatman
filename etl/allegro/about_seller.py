@@ -28,7 +28,7 @@ def get_nip(contact_data_field):
 
 def get_phone_numbers(phone_number_field):
     if not phone_number_field:
-        return
+        return set()
     phone_numbers = set()
     for number in remove_empty_lines(phone_number_field.text):
         if number and len(number) >= 9 and len(number) <= 11:
@@ -37,7 +37,7 @@ def get_phone_numbers(phone_number_field):
 
 def get_emails(email_field):
     if not email_field:
-        return None
+        return set()
     emails = set()
     for word in email_field.text.split():
         if "@" in word:
@@ -71,7 +71,7 @@ def get_other_candidate_numbers(all_fields):
 
 def get_other_candidate_emails(all_fields):
     if not all_fields or not all_fields.text:
-        return None
+        return set()
     emails = set()
     for word in all_fields.text.split():
         if "@" in word:
@@ -80,8 +80,9 @@ def get_other_candidate_emails(all_fields):
             emails.add(word.strip())
     return emails
 
-def extract_data_from(file_path):
+def extract_data_from_seller(file_path):
     with open(file_path, 'r') as myfile:
+        print("Processing file: {}".format(file_path))
         data = myfile.read()
 
     soup = BeautifulSoup(data, 'html.parser')
@@ -99,20 +100,20 @@ def extract_data_from(file_path):
     (other_candidate_phone_numbers, alternative_nip) = get_other_candidate_numbers(all_fields)
     other_candidate_emails = get_other_candidate_emails(all_fields)
 
-    user_id = file_path.split('/')[-1]
+    user_id = str(file_path).split('/')[-1]
 
     return {
         "user_id":user_id,
         "nip": nip or alternative_nip,
-        "phone_numbers": phone_numbers,
+        "phone_numbers": tuple(phone_numbers),
         "username": username,
-        "emails": emails,
-        "more_phones": other_candidate_phone_numbers,
-        "more_emails": other_candidate_emails,
+        "emails": tuple(emails),
+        "more_phones": tuple(other_candidate_phone_numbers),
+        "more_emails": tuple(other_candidate_emails),
     }
 
 
 pattern = str(pathlib.Path(__file__).absolute().parent.parent.parent / 'examples' / 'vatman' / 'users' / '*')
-parsed_users = [extract_data_from(file_path) for file_path in tqdm(glob.glob(pattern))]
+parsed_users = [extract_data_from_seller(file_path) for file_path in tqdm(glob.glob(pattern))]
 df = pd.io.json.json_normalize(parsed_users)
 a = df
