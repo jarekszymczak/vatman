@@ -1,16 +1,15 @@
-import glob
-import pathlib
 import re
-from commons.utils import (remove_empty_lines, cleanup_and_join_numbers_in_text, extract_numbers_from_text)
-import pandas as pd
+
 from bs4 import BeautifulSoup
-from tqdm import tqdm
+
+from commons.utils import (remove_empty_lines, cleanup_and_join_numbers_in_text, extract_numbers_from_text)
 
 contact_data_selector = "#sellerUserData > div > div.col-ss-12.col-sm-9.col-md-10 > div"
 phone_number_selector = "#sellerInfoContactInfo > div > div.seller-info-data.col-ss-6.col-sm-4.col-md-5"
 email_selector = "#sellerInfoContactInfo > div > div.seller-info-data.col-ss-6.col-sm-4.col-md-5"
 username_selector = "div.main-title-breadcrumbs.clearfix > div > h1 > span > span.uname"
 all_fields_id = "showItemSellerInfo"
+
 
 def get_nip(contact_data_field):
     if not contact_data_field or not contact_data_field.text:
@@ -22,9 +21,10 @@ def get_nip(contact_data_field):
     if len(nip_candidates) == 1:
         return list(nip_candidates)[0]
     for idx, word in enumerate(words):
-        if idx > 0 and word in nip_candidates and "nip" == words[idx-1].lower():
+        if idx > 0 and word in nip_candidates and "nip" == words[idx - 1].lower():
             return word
     return None
+
 
 def get_phone_numbers(phone_number_field):
     if not phone_number_field:
@@ -35,21 +35,24 @@ def get_phone_numbers(phone_number_field):
             phone_numbers.update(extract_numbers_from_text(number))
     return phone_numbers
 
+
 def get_emails(email_field):
     if not email_field:
         return set()
     emails = set()
     for word in email_field.text.split():
         if "@" in word:
-            while not word[-1].isalnum():
+            while word and not word[-1].isalnum():
                 word = word[:-1]
             emails.add(word.strip())
     return emails
+
 
 def get_username(username_field):
     if not username_field:
         return None
     return username_field.text.strip()
+
 
 def get_other_candidate_numbers(all_fields):
     if not all_fields or not all_fields.text:
@@ -65,9 +68,10 @@ def get_other_candidate_numbers(all_fields):
     if len(nip_candidates) == 1:
         potential_nip = nip_candidates[0].strip()
     for idx, word in enumerate(words):
-        if idx > 0 and word in nip_candidates and "nip" == words[idx-1].lower():
+        if idx > 0 and word in nip_candidates and "nip" == words[idx - 1].lower():
             potential_nip = word.strip()
     return ({num.strip() for num in nums if num and (len(num) == 9 or len(num) == 11)}, potential_nip)
+
 
 def get_other_candidate_emails(all_fields):
     if not all_fields or not all_fields.text:
@@ -79,6 +83,7 @@ def get_other_candidate_emails(all_fields):
                 word = word[:-1]
             emails.add(word.strip())
     return emails
+
 
 def extract_data_from_seller(file_path):
     with open(file_path, 'r') as myfile:
@@ -103,7 +108,7 @@ def extract_data_from_seller(file_path):
     user_id = str(file_path).split('/')[-1]
 
     return {
-        "user_id":user_id,
+        "user_id": user_id,
         "nip": nip or alternative_nip,
         "phone_numbers": tuple(phone_numbers),
         "username": username,
@@ -111,9 +116,3 @@ def extract_data_from_seller(file_path):
         "more_phones": tuple(other_candidate_phone_numbers),
         "more_emails": tuple(other_candidate_emails),
     }
-
-
-pattern = str(pathlib.Path(__file__).absolute().parent.parent.parent / 'examples' / 'vatman' / 'users' / '*')
-parsed_users = [extract_data_from_seller(file_path) for file_path in tqdm(glob.glob(pattern))]
-df = pd.io.json.json_normalize(parsed_users)
-a = df
